@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Catalog</title>
+<title>Word Catalog — Vocabulary Study</title>
 <style>
   :root{
     --paper:#e7e0cb;
@@ -798,34 +798,115 @@ let matchLocked = false;
 let currentMode = 'flash';
 
 // ---------- persistence ----------
-async function loadState(){
+// Uses browser localStorage so preferences, stars, mastery, misses,
+// and Learn statistics survive refreshes and browser restarts.
+// Data is stored locally for this website only; no login is required.
+const STORAGE_KEYS = {
+  settings: 'wordCatalog.settings.v1',
+  progress: 'wordCatalog.progress.v1',
+  stats: 'wordCatalog.stats.v1'
+};
+
+function loadState(){
   try{
-    const s = await window.storage.get('settings', false);
-    if(s && s.value) Object.assign(settings, JSON.parse(s.value));
-  }catch(e){ /* no saved settings yet */ }
-  try{
-    const p = await window.storage.get('progress', false);
-    if(p && p.value) Object.assign(progress, JSON.parse(p.value));
-  }catch(e){ /* no saved progress yet */ }
-  try{
-    const st = await window.storage.get('stats', false);
-    if(st && st.value) Object.assign(stats, JSON.parse(st.value));
-  }catch(e){ /* no saved stats yet */ }
-}
-let saveTimer=null;
-function saveState(){
-  const tag = document.getElementById('saveTag');
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async ()=>{
-    try{ await window.storage.set('settings', JSON.stringify(settings), false); }catch(e){}
-    try{ await window.storage.set('progress', JSON.stringify(progress), false); }catch(e){}
-    try{ await window.storage.set('stats', JSON.stringify(stats), false); }catch(e){}
-    if(tag){
-      tag.classList.add('show');
-      setTimeout(()=>tag.classList.remove('show'), 900);
+    const savedSettings = localStorage.getItem(STORAGE_KEYS.settings);
+    if(savedSettings){
+      const parsed = JSON.parse(savedSettings);
+      if(parsed && typeof parsed === 'object'){
+        Object.assign(settings, parsed);
+      }
     }
-  }, 300);
+  }catch(e){
+    console.error('Could not load settings:', e);
+  }
+
+  try{
+    const savedProgress = localStorage.getItem(STORAGE_KEYS.progress);
+    if(savedProgress){
+      const parsed = JSON.parse(savedProgress);
+      if(parsed && typeof parsed === 'object'){
+        Object.keys(parsed).forEach(id=>{
+          if(progress[id]){
+            progress[id] = {
+              starred: !!parsed[id].starred,
+              level: Number(parsed[id].level) || 0,
+              misses: Number(parsed[id].misses) || 0,
+              ...(parsed[id].roundLevel !== undefined
+                ? {roundLevel: Number(parsed[id].roundLevel) || 0}
+                : {})
+            };
+          }
+        });
+      }
+    }
+  }catch(e){
+    console.error('Could not load progress:', e);
+  }
+
+  try{
+    const savedStats = localStorage.getItem(STORAGE_KEYS.stats);
+    if(savedStats){
+      const parsed = JSON.parse(savedStats);
+      if(parsed && typeof parsed === 'object'){
+        stats = {
+          attempts: Number(parsed.attempts) || 0,
+          correct: Number(parsed.correct) || 0
+        };
+      }
+    }
+  }catch(e){
+    console.error('Could not load stats:', e);
+  }
 }
+
+let saveTimer = null;
+
+function saveState(){
+  clearTimeout(saveTimer);
+
+  saveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+      localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(progress));
+      localStorage.setItem(STORAGE_KEYS.stats, JSON.stringify(stats));
+
+      const tag = document.getElementById('saveTag');
+      if(tag){
+        tag.textContent = 'saved';
+        tag.classList.add('show');
+        setTimeout(()=>tag.classList.remove('show'), 900);
+      }
+    }catch(e){
+      console.error('Could not save application state:', e);
+
+      const tag = document.getElementById('saveTag');
+      if(tag){
+        tag.textContent = 'save failed';
+        tag.classList.add('show');
+        setTimeout(()=>{
+          tag.classList.remove('show');
+          tag.textContent = 'saved';
+        }, 1600);
+      }
+    }
+  }, 100);
+}
+
+// Save immediately when the page is being hidden/closed so the latest
+// state is not lost if the user refreshes very quickly.
+function saveStateImmediately(){
+  clearTimeout(saveTimer);
+  try{
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(progress));
+    localStorage.setItem(STORAGE_KEYS.stats, JSON.stringify(stats));
+  }catch(e){
+    console.error('Could not save application state:', e);
+  }
+}
+
+window.addEventListener('pagehide', saveStateImmediately);
+window.addEventListener('beforeunload', saveStateImmediately);
 
 // ---------- audio ----------
 let actx;
@@ -1387,8 +1468,8 @@ document.addEventListener('keydown', e=>{
   else if(e.key.toLowerCase()==='k'){ const w=flashDeck[flashIdx]; if(w) toggleKnown(w.id); }
 });
 
-(async function init(){
-  await loadState();
+(function init(){
+  loadState();
   applyTheme();
   document.getElementById('deckCount').textContent = WORDS.length + ' entries';
   initSettingsPanel();
