@@ -14,16 +14,22 @@
       <div class="count" id="deckCount">130 entries</div>
     </div>
     <div class="header-btns">
-      <button class="gear-btn" id="complianceBtn">🔒 Compliance</button>
-      <button class="gear-btn" id="gearBtn">⚙ Customize</button>
+      <button class="gear-btn" id="complianceBtn">Privacy</button>
+      <button class="gear-btn" id="gearBtn">Settings</button>
     </div>
   </header>
+
+  <div class="banner" id="storageBanner" hidden>
+    Local storage isn't available in this environment, so changes will not be saved after you close or reload this page.
+    Download these files and open <code>index.html</code> directly in a browser to keep your progress.
+  </div>
 
   <div class="tabs">
     <button class="tab-btn active" data-mode="flash">Flashcards</button>
     <button class="tab-btn" data-mode="learn">Learn</button>
     <button class="tab-btn" data-mode="match">Match</button>
     <button class="tab-btn" data-mode="browse">Browse</button>
+    <button class="tab-btn" data-mode="manage">Manage</button>
     <button class="tab-btn" data-mode="stats">Stats</button>
   </div>
 
@@ -128,34 +134,37 @@
     <div class="switch" id="toggleSound"></div>
   </div>
 
-  <button class="reset-btn" id="resetBtn">Reset all progress &amp; stats</button>
+  <button class="reset-btn" id="resetBtn">Clear all local data (vocabulary, progress, stats, settings)</button>
 </div>
 
 <!-- Compliance modal -->
 <div class="overlay" id="complianceOverlay"></div>
 <div class="modal" id="complianceModal" role="dialog" aria-modal="true" aria-labelledby="complianceTitle">
   <button class="close-drawer" id="closeCompliance" aria-label="Close">×</button>
-  <h3 id="complianceTitle">Data &amp; privacy notice</h3>
+  <h3 id="complianceTitle">Privacy notice</h3>
   <div class="modal-body">
-    <p>This is an informational summary of what this study tool does with data, written in plain language rather than as a legal document.</p>
+    <p>This is a plain-language explanation of what this tool does with data, not a legal document.</p>
 
-    <h4>What is stored</h4>
+    <h4>What is stored, and where</h4>
+    <p>Everything this tool remembers is written to your browser's own <strong>localStorage</strong> for this page — not to a server, not to an account, not to the cloud. Nobody at Anthropic or anywhere else can see it, and it never leaves your device. It includes:</p>
     <ul>
-      <li>Your star marks, per-word mastery level, attempt/correct counts, and Learn statistics</li>
-      <li>Your interface preferences (theme, text size, study direction, scope, batch size, etc.)</li>
+      <li>Vocabulary customizations — words you've added, and default words you've removed</li>
+      <li>Study progress — star marks, per-word mastery, attempt and correct counts</li>
+      <li>Statistics derived from the above</li>
+      <li>Interface preferences (theme, text size, study direction, scope, batch size, and so on)</li>
     </ul>
-    <p>No name, email, or other identifying information is collected by this tool. The word list itself is fixed content built into the app, not user data.</p>
+    <p>No name, email, device identifier, or other personal information is collected. The default word list is fixed content built into the app, not data about you.</p>
 
-    <h4>Where it's stored</h4>
-    <p>Data is saved using Claude's built-in artifact storage, scoped privately to your account. It is not shared with other users of this artifact, and this tool does not send data to any third-party server, analytics provider, or advertiser.</p>
+    <h4>What is not collected</h4>
+    <p>This tool has no analytics, tracking, advertising, or telemetry, and makes no network requests of any kind once the page is loaded — everything runs entirely in your browser. There is no consent popup for storage because everything stored is strictly necessary for the features you're actively using (saving your own vocabulary and progress), not optional tracking — there is nothing non-essential to ask consent for.</p>
 
-    <h4>How it's used</h4>
-    <p>Stored data is used only to power features you see directly: remembering which words you've starred or mastered, resuming your Learn progress, and remembering your display settings. The Learn algorithm's scheduling runs entirely in your browser using this stored history — no external processing or model is involved.</p>
+    <h4>Persistence and loss of data</h4>
+    <p>Because this is ordinary browser storage, it is tied to this specific browser and device. It will not follow you to another browser or computer, and clearing your browser's site data (or using private/incognito mode) will erase it. If your browser blocks local storage entirely, a notice appears at the top of the page and your changes will only last for the current session.</p>
 
     <h4>Your controls</h4>
-    <p>You can permanently delete all stored progress and statistics at any time with the "Reset all progress &amp; stats" button in Customize. Closing this tool without saving generates no data.</p>
+    <p>You can add, remove, or restore vocabulary at any time in the Manage tab. You can permanently erase everything this tool has stored — vocabulary changes, progress, statistics, and preferences — with the "Clear all local data" button in Settings.</p>
 
-    <p class="modal-fineprint">This notice describes the tool's actual data handling to help you make an informed choice; it is not a legal certification of compliance with GDPR or any other specific regulation.</p>
+    <p class="modal-fineprint">This notice describes the tool's actual data handling to help you make an informed choice. It is not a certification of compliance with GDPR or any other specific regulation.</p>
   </div>
 </div>
 
