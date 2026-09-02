@@ -1,10 +1,32 @@
 # Free LSAT Vocab Prep
 
-![Google Slides](https://img.shields.io/badge/GOOGLE%20SLIDES-yellow?style=for-the-badge)
+![Claude](https://img.shields.io/badge/Claude-DA7756?style=for-the-badge&logo=claude&logoColor=white)
 ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS3-1572B6.svg?style=for-the-badge&logo=CSS3&logoColor=white)
+![HTML](https://img.shields.io/badge/HTML5-E34F26.svg?style=for-the-badge&logo=HTML5&logoColor=white)
 
-![Interface](assets/main_page.png)
+<p align="center">
+  <img src="assets/main_page.png" alt="Interface">
+</p>
 
 ---
-## Problem Description
-Duplicate medical record numbers (MRNs) are a costly problem in healthcare. When the same patient ends up with multiple MRNs due to typos, mismatched demographics, or sys
+## Why I Built This
+
+[Free LSAT Vocab Prep](https://lsat-vocab-project.vercel.app/) is a free Quizlet alternative designed to help LSAT students master advanced vocabulary, particularly vocabulary encountered in Reading Comprehension (RC) passages. My goal is to make LSAT prep more accessible by eliminating the cost barrier associated with existing vocabulary study tools!
+
+## How I built this
+
+I built this primarily with Claude, however I do have an educational background in IT, so I was able to manually add/remove certain features and troubleshoot minor bugs. 
+
+The vocabulary list was pulled from [this Quizlet set](https://quizlet.com/720938082/lsat-vocab-building-flash-cards/?funnelUUID=44971580-cde8-4d79-922a-1dfb3cc9701f). I am incredibly grateful to the original creator of the set for compiling together all of these words and their definitions.
+
+## Core Features
+
+- Flashcards with the ability to star and prioritize words, with keybinds
+- A "Learn" mode that functions similarly to Quizlet's version
+- A "Match" mode
+- A "Browse" section that shows an index of all words and their definitions
+- A "Manage" section that allows you to add/remove words; has 130 words and their definitions by default
+- User stats to track performance
+- A settings panel for customizability
+- GDPR compliance
