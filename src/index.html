@@ -3,19 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Catalog</title>
+<title>Free LSAT Vocab Prep</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>Word Catalog</h1>
+    <div class="title-block">
+      <h1>Free LSAT Vocab Prep<span class="title-doodle" aria-hidden="true"></span></h1>
       <div class="count" id="deckCount">130 entries</div>
-    </div>
-    <div class="header-btns">
-      <button class="gear-btn" id="complianceBtn">Privacy</button>
-      <button class="gear-btn" id="gearBtn">Settings</button>
     </div>
   </header>
 
@@ -24,24 +20,33 @@
     Download these files and open <code>index.html</code> directly in a browser to keep your progress.
   </div>
 
-  <div class="tabs">
+  <nav class="tabs">
     <button class="tab-btn active" data-mode="flash">Flashcards</button>
     <button class="tab-btn" data-mode="learn">Learn</button>
     <button class="tab-btn" data-mode="match">Match</button>
     <button class="tab-btn" data-mode="browse">Browse</button>
     <button class="tab-btn" data-mode="manage">Manage</button>
     <button class="tab-btn" data-mode="stats">Stats</button>
-  </div>
+  </nav>
 
-  <div id="app"></div>
+  <main id="app"></main>
   <div class="save-tag" id="saveTag">saved</div>
+
+  <footer class="site-footer">
+    <div class="footer-tagline">Free LSAT Vocab Prep — studies locally in your browser, no account needed.</div>
+    <div class="footer-btns">
+      <button class="footer-btn" id="infoBtn">Info</button>
+      <button class="footer-btn" id="gearBtn">Settings</button>
+      <button class="footer-btn" id="complianceBtn">Compliance</button>
+    </div>
+  </footer>
 </div>
 
 <!-- Settings drawer -->
 <div class="overlay" id="overlay"></div>
 <div class="drawer" id="drawer">
   <button class="close-drawer" id="closeDrawer" aria-label="Close">×</button>
-  <h3>Customize</h3>
+  <h3>Settings</h3>
 
   <div class="field">
     <label>Study direction</label>
@@ -141,7 +146,7 @@
 <div class="overlay" id="complianceOverlay"></div>
 <div class="modal" id="complianceModal" role="dialog" aria-modal="true" aria-labelledby="complianceTitle">
   <button class="close-drawer" id="closeCompliance" aria-label="Close">×</button>
-  <h3 id="complianceTitle">Privacy notice</h3>
+  <h3 id="complianceTitle">Compliance notice</h3>
   <div class="modal-body">
     <p>This is a plain-language explanation of what this tool does with data, not a legal document.</p>
 
@@ -165,6 +170,36 @@
     <p>You can add, remove, or restore vocabulary at any time in the Manage tab. You can permanently erase everything this tool has stored — vocabulary changes, progress, statistics, and preferences — with the "Clear all local data" button in Settings.</p>
 
     <p class="modal-fineprint">This notice describes the tool's actual data handling to help you make an informed choice. It is not a certification of compliance with GDPR or any other specific regulation.</p>
+  </div>
+</div>
+
+<!-- Info modal -->
+<div class="overlay" id="infoOverlay"></div>
+<div class="modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+  <button class="close-drawer" id="closeInfo" aria-label="Close">×</button>
+  <h3 id="infoTitle">About this tool</h3>
+  <div class="modal-body">
+    <p>Free LSAT Vocab Prep is a small, self-contained vocabulary study tool covering words that show up often in dense LSAT reading passages and logical reasoning stems. It runs entirely in your browser — open <code>index.html</code> and go.</p>
+
+    <h4>Modes</h4>
+    <ul>
+      <li><strong>Flashcards</strong> — flip through terms and definitions at your own pace.</li>
+      <li><strong>Learn</strong> — an adaptive quiz that studies small batches at a time, prioritizing whatever you're most likely to forget, and shifting from multiple choice to typed recall as you demonstrate mastery.</li>
+      <li><strong>Match</strong> — a timed pairs game.</li>
+      <li><strong>Browse</strong> — search the full list, star favorites, or remove words.</li>
+      <li><strong>Manage</strong> — add your own words, or restore ones you've removed.</li>
+      <li><strong>Stats</strong> — a summary of what you've mastered so far.</li>
+    </ul>
+
+    <h4>Keyboard shortcuts (Flashcards)</h4>
+    <ul>
+      <li><strong>Space</strong> or click the card — flip it</li>
+      <li><strong>Left / Right arrows</strong> — previous / next card</li>
+      <li><strong>S</strong> — star the current card</li>
+      <li><strong>K</strong> — mark the current card known</li>
+    </ul>
+
+    <p class="modal-fineprint">See the Compliance notice for details on what data this tool stores and how.</p>
   </div>
 </div>
 
