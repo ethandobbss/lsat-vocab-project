@@ -197,7 +197,7 @@ function sanitizeProgressEntry(e){
 function sanitizeSettings(raw){
   const d = {
     direction:'td', scope:'all', order:'shuffle', batchSize:5, choices:4, input:'progressive',
-    fontScale:1, theme:'day', sound:false, autoplay:false, autoSpeed:'normal'
+    fontScale:1, theme:'day', sound:true, autoplay:false, autoSpeed:'normal'
   };
   if(!raw || typeof raw !== 'object') return d;
   const oneOf = (val, allowed, fallback) => allowed.includes(val) ? val : fallback;
@@ -210,7 +210,7 @@ function sanitizeSettings(raw){
     input: oneOf(raw.input, ['progressive','mc','type'], d.input),
     fontScale: oneOf(raw.fontScale, [0.9,1,1.15], d.fontScale),
     theme: oneOf(raw.theme, ['day','night'], d.theme),
-    sound: !!raw.sound,
+    sound: (raw.sound === undefined) ? d.sound : !!raw.sound,
     autoplay: !!raw.autoplay,
     autoSpeed: oneOf(raw.autoSpeed, ['slow','normal','fast'], d.autoSpeed),
   };
@@ -496,16 +496,51 @@ function handleLearnAnswer(given, btnEl){
   saveAll();
 
   learnAwaitingNext = true;
-  setTimeout(() => {
-    learnAwaitingNext = false;
-    learnBatchPos += 1;
-    if(learnBatchPos < learnBatch.length){
-      renderLearnQuestion();
+  if(isCorrect){
+    setTimeout(() => { advanceLearn(); }, 650);
+  } else {
+    renderForcedContinue();
+  }
+}
+function advanceLearn(){
+  learnAwaitingNext = false;
+  learnBatchPos += 1;
+  if(learnBatchPos < learnBatch.length){
+    renderLearnQuestion();
+  } else {
+    learnPhase = 'recap';
+    renderLearnRecap();
+  }
+}
+function renderForcedContinue(){
+  const app = document.getElementById('app');
+  const wrap = document.createElement('div');
+  wrap.className = 'continue-wrap';
+  const btn = document.createElement('button');
+  btn.className = 'continue-btn';
+  btn.disabled = true;
+  const WAIT_SECONDS = 4;
+  let remaining = WAIT_SECONDS;
+  btn.textContent = `Continue (${remaining})`;
+  wrap.appendChild(btn);
+  app.querySelector('.learn-card').appendChild(wrap);
+
+  const tick = setInterval(() => {
+    remaining -= 1;
+    if(remaining <= 0){
+      clearInterval(tick);
+      btn.disabled = false;
+      btn.textContent = 'Continue';
     } else {
-      learnPhase = 'recap';
-      renderLearnRecap();
+      btn.textContent = `Continue (${remaining})`;
     }
-  }, isCorrect ? 650 : 1700);
+  }, 1000);
+
+  btn.onclick = () => {
+    if(btn.disabled) return;
+    clearInterval(tick);
+    advanceLearn();
+  };
 }
 function renderLearnRecap(){
   const app = document.getElementById('app');
@@ -1151,7 +1186,18 @@ function initSettingsPanel(){
   document.getElementById('closeCompliance').onclick = closeCompliance;
   document.getElementById('complianceOverlay').onclick = closeCompliance;
 
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeCompliance(); } });
+  document.getElementById('infoBtn').onclick = ()=>{
+    document.getElementById('infoModal').classList.add('open');
+    document.getElementById('infoOverlay').classList.add('open');
+  };
+  const closeInfo = ()=>{
+    document.getElementById('infoModal').classList.remove('open');
+    document.getElementById('infoOverlay').classList.remove('open');
+  };
+  document.getElementById('closeInfo').onclick = closeInfo;
+  document.getElementById('infoOverlay').onclick = closeInfo;
+
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeCompliance(); closeInfo(); } });
 
   document.getElementById('resetBtn').onclick = ()=>{
     if(!confirm('Clear all local data? This permanently deletes your custom words, restores removed default words, and wipes all progress, statistics, and settings on this device. This cannot be undone.')) return;
