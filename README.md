@@ -25,10 +25,16 @@ The vocabulary list was pulled from [this Quizlet set](https://quizlet.com/72093
 ## Core Features
 
 - Flashcards with the ability to star and prioritize words, with keybinds
-- A "Learn" mode that functions similarly to Quizlet's version
+- A "Learn" mode that functions similarly to Quizlet's version. It also has confetti 😁 
 - A "Match" mode
 - A "Browse" section that shows an index of all words and their definitions
 - A "Manage" section that allows you to add/remove words; has 130 words and their definitions by default
+- A customizable "Test" mode
 - User stats to track performance
 - A settings panel for customizability
 - GDPR compliance
+
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
