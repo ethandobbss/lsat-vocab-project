@@ -16,7 +16,7 @@
 
 ## How I built this
 
-I built this primarily with Claude, however I do have an educational background in IT, so I was able to manually add/remove certain features and troubleshoot minor bugs. 
+I built this primarily with Claude, however I do have an educational background in IT, so I was able to manually add/remove certain features and troubleshoot minor bugs. The website is hosted for free with Vercel.
 
 The vocabulary list was pulled from [this Quizlet set](https://quizlet.com/720938082/lsat-vocab-building-flash-cards/?funnelUUID=44971580-cde8-4d79-922a-1dfb3cc9701f). I am incredibly grateful to the original creator of the set for compiling together all of these words and their definitions.
 
