@@ -1,12 +1,3 @@
-/* =====================================================================
-   Free LSAT Vocab Prep — visual language
-   A friendly, rounded, "hand-assembled" study app: bright ink-blue and
-   sunshine-yellow accents, big soft cards, a marker-style display font
-   for headings, and doodly little touches (rotated cards, sticker tags,
-   a hand-drawn underline). Every size below is fluid (clamp/vw/%), so
-   the whole layout scales smoothly with the browser window rather than
-   snapping between a few fixed breakpoints.
-   ===================================================================== */
 :root{
   --bg:#eef1fb;
   --surface:#ffffff;
@@ -56,10 +47,9 @@ html.night{
   --shadow-lg: 0 18px 40px rgba(0,0,0,.45), 0 4px 10px rgba(0,0,0,.3);
 }
 
-/* ---------- fluid base ---------- */
 *{ box-sizing:border-box; }
 html{
-  font-size: clamp(14px, 0.55vw + 12.5px, 18px); /* whole app scales with viewport width */
+  font-size: clamp(14px, 0.55vw + 12.5px, 18px);
 }
 body{
   margin:0;
@@ -79,13 +69,12 @@ body{
   font-size: calc(1rem * var(--fs-scale));
 }
 button, input, textarea{ font: inherit; color:inherit; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, .choice:focus-visible{
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .choice:focus-visible{
   outline:3px solid var(--accent-yellow);
   outline-offset:2px;
   border-radius:6px;
 }
 
-/* ---------- header ---------- */
 header{ margin-bottom: clamp(18px, 3vw, 28px); }
 .title-block h1{
   font-family:var(--font-hand);
@@ -116,7 +105,6 @@ header .count{
   border:1px solid var(--line);
 }
 
-/* ---------- banner ---------- */
 .banner{
   background:var(--accent-red-tint);
   border:2px dashed var(--accent-red);
@@ -130,7 +118,6 @@ header .count{
 }
 .banner code{ background:rgba(0,0,0,.08); padding:1px 5px; border-radius:4px; }
 
-/* ---------- tabs (pill nav) ---------- */
 .tabs{
   display:flex;
   gap:clamp(6px, 1vw, 10px);
@@ -157,12 +144,8 @@ header .count{
   border-color:var(--primary);
 }
 
-/* ---------- generic buttons ---------- */
 button, input, textarea{ font-size:inherit; }
 
-/* =====================================================================
-   Flashcards
-   ===================================================================== */
 .stage{ display:flex; flex-direction:column; align-items:center; }
 .progressbar{
   width:100%;
@@ -227,13 +210,6 @@ button, input, textarea{ font-size:inherit; }
   height:8px;
   background:linear-gradient(90deg, var(--primary), var(--accent-purple));
 }
-/* THE FIX: this must be a compound selector (.face.back), not a descendant
-   selector (.back .face) — "front"/"back" are combined onto the SAME
-   element as "face" in the markup (class="face back"), not nested inside
-   it. A descendant selector never matches here, so the back face was
-   never pre-rotated 180°; after the parent's flip, both faces ended up
-   facing away from the viewer at once, which is why the card appeared
-   to simply vanish instead of flipping. */
 .face.back{
   transform:rotateY(180deg);
   -webkit-transform:rotateY(180deg);
@@ -321,9 +297,6 @@ button, input, textarea{ font-size:inherit; }
 .iconbtn.known{ color:var(--accent-green); border-color:var(--accent-green); background:var(--accent-green-tint); }
 .iconbtn:disabled{ opacity:.4; cursor:default; transform:none; }
 
-/* =====================================================================
-   Learn mode
-   ===================================================================== */
 .learn-card{
   background:var(--surface);
   border-radius:var(--radius-lg);
@@ -379,11 +352,13 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
   font-family:var(--font-body);
   font-size: clamp(.9rem, .85rem + .2vw, 1rem);
   line-height:1.4;
-  transition: border-color .12s ease, transform .1s ease;
+  transition: border-color .12s ease, transform .1s ease, background .12s ease;
 }
 .choice:hover{ border-color:var(--primary); transform:translateX(2px); }
+.choice.selected{ border-color:var(--primary); background:var(--primary-tint); font-weight:700; }
 .choice.correct{ background:var(--accent-green-tint); border-color:var(--accent-green); color:var(--ink); font-weight:700; }
 .choice.wrong{ background:var(--accent-red-tint); border-color:var(--accent-red); color:var(--ink); }
+.choice:disabled{ cursor:default; }
 .type-row{ display:flex; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
 .type-row input{
   flex:1;
@@ -443,7 +418,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .complete{ text-align:center; padding: clamp(30px, 6vw, 48px) clamp(12px,3vw,20px); }
 .complete h2{ font-family:var(--font-hand); font-weight:700; color:var(--primary-dark); font-size:clamp(1.4rem,1.1rem+1vw,1.9rem); }
 
-/* ---- Batch recap ---- */
 .recap-score{
   font-family:var(--font-hand);
   font-weight:700;
@@ -470,9 +444,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .recap-list .term{ font-weight:700; }
 .recap-list .note{ margin-left:auto; color:var(--ink-soft); font-family:var(--font-mono); font-size:.75em; text-align:right; }
 
-/* =====================================================================
-   Match
-   ===================================================================== */
 .match-head{
   display:flex; justify-content:space-between; align-items:center;
   font-family:var(--font-mono); font-size:.8rem; color:var(--ink-soft);
@@ -504,9 +475,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .tile.wrongflash{ border-color:var(--accent-red); background:var(--accent-red-tint); }
 .tile.matched{ opacity:.15; pointer-events:none; }
 
-/* =====================================================================
-   Browse
-   ===================================================================== */
 .search-row{ margin-bottom:16px; }
 .search-row input{
   width:100%;
@@ -542,9 +510,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .browse-star.on{ color:#8a6a00; }
 .browse-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
 
-/* =====================================================================
-   Manage tab
-   ===================================================================== */
 .manage-section{ margin-bottom: clamp(24px, 4vw, 34px); }
 .manage-section h3{
   font-family:var(--font-hand); font-weight:700; font-size:1.15em; color:var(--primary-dark);
@@ -620,9 +585,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .mini-btn.restore{ border-color:var(--accent-green); color:var(--accent-green); }
 .mini-btn.restore:hover{ background:var(--accent-green); color:#fff; }
 
-/* =====================================================================
-   Stats
-   ===================================================================== */
 .stat-grid{
   display:grid;
   grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
@@ -640,9 +602,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 .stat-box .num{ font-family:var(--font-hand); font-weight:700; font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem); color:var(--primary-dark); }
 .stat-box .lbl{ font-family:var(--font-mono); font-size:.66rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; margin-top:4px; }
 
-/* =====================================================================
-   Empty states / save tag
-   ===================================================================== */
 .empty-note{
   text-align:center;
   color:var(--ink-soft);
@@ -663,9 +622,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 }
 .save-tag.show{ opacity:.8; }
 
-/* =====================================================================
-   Footer
-   ===================================================================== */
 .site-footer{
   margin-top: clamp(32px, 6vw, 56px);
   padding-top: clamp(18px, 3vw, 26px);
@@ -699,9 +655,6 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 }
 .footer-btn:hover{ transform:translateY(-1px); border-color:var(--primary); color:var(--primary-dark); }
 
-/* =====================================================================
-   Settings drawer & modals
-   ===================================================================== */
 .overlay{
   position:fixed; inset:0; background:rgba(23,26,43,.4);
   opacity:0; pointer-events:none; transition:opacity .25s ease;
@@ -760,6 +713,7 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
 }
 .seg button:last-child{ border-right:none; }
 .seg button.active{ background:var(--primary); color:#fff; }
+.seg button:disabled{ opacity:.35; cursor:not-allowed; }
 .toggle-row{ display:flex; align-items:center; justify-content:space-between; }
 .switch{
   width:42px; height:24px;
@@ -821,13 +775,96 @@ html.night .badge.confirm{ background:#4a3d10; color:var(--accent-yellow); }
   box-shadow:var(--shadow-lg);
 }
 .modal.open{ opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
-#complianceOverlay, #infoOverlay{ z-index:20; }
+#complianceOverlay, #infoOverlay, #testSetupOverlay{ z-index:20; }
 @media (prefers-reduced-motion: reduce){ .modal{ transition:none; } }
 .modal h3{ font-family:var(--font-hand); font-weight:700; font-size:1.35em; color:var(--primary-dark); margin-top:0; border-bottom:2px dashed var(--line); padding-bottom:10px; }
 .modal h4{ font-size:.8em; text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-mono); color:var(--primary); margin:20px 0 6px; }
 .modal p, .modal li{ font-size: clamp(.88rem, .84rem + .2vw, .96rem); line-height:1.6; color:var(--ink); }
 .modal ul{ margin:0 0 10px; padding-left:20px; }
 .modal-fineprint{ color:var(--ink-soft); font-size:.78em !important; margin-top:20px; border-top:1px dashed var(--line); padding-top:14px; }
+.modal-body input[type="number"], .modal-body input[type="text"]{
+  font-family:var(--font-body);
+  font-size:1rem;
+  padding: clamp(9px, 1.5vw, 11px) clamp(11px, 2vw, 13px);
+  border:2px solid var(--line);
+  border-radius:var(--radius-md);
+  background:var(--surface);
+  color:var(--ink);
+}
+
+.test-q{
+  padding: clamp(14px, 2.5vw, 18px) 0;
+  border-bottom:2px dashed var(--line);
+}
+.test-q:last-of-type{ border-bottom:none; }
+.tq-head{
+  font-family:var(--font-mono);
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--ink-soft);
+  margin-bottom:10px;
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.tq-prompt{
+  font-size: clamp(.95rem, .9rem + .3vw, 1.1rem);
+  line-height:1.5;
+  margin-bottom:12px;
+}
+.tq-prompt b{ font-family:var(--font-hand); color:var(--primary-dark); }
+.match-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:9px;
+  flex-wrap:wrap;
+}
+.match-row .mr-term{
+  font-family:var(--font-hand);
+  font-weight:700;
+  color:var(--primary-dark);
+  min-width:130px;
+  flex-shrink:0;
+}
+.match-row select{
+  flex:1;
+  min-width:180px;
+  font-family:var(--font-body);
+  font-size:.92rem;
+  padding: clamp(8px, 1.5vw, 10px);
+  border:2px solid var(--line);
+  border-radius:var(--radius-md);
+  background:var(--surface);
+  color:var(--ink);
+}
+.match-row.ok select{ border-color:var(--accent-green); background:var(--accent-green-tint); }
+.match-row.bad select{ border-color:var(--accent-red); background:var(--accent-red-tint); }
+.mr-correct{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  color:var(--accent-red);
+  flex-basis:100%;
+}
+
+.confetti-piece{
+  position:fixed;
+  top:-14px;
+  width:9px;
+  height:16px;
+  opacity:.95;
+  pointer-events:none;
+  z-index:999;
+  animation-name:confetti-fall;
+  animation-timing-function:cubic-bezier(.35,0,.65,1);
+  animation-fill-mode:forwards;
+}
+@keyframes confetti-fall{
+  0%{ transform:translate(0,0) rotate(0deg); opacity:1; }
+  100%{ transform:translate(var(--drift,0px),112vh) rotate(var(--spin,360deg)); opacity:.85; }
+}
 
 @media (max-width:480px){
   .card{ aspect-ratio: 4/3.6; }
