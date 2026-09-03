@@ -1,8 +1,3 @@
-// =====================================================================
-// Master vocabulary — immutable. Never mutated at runtime; user
-// customizations (added/removed words) are layered on top of this in
-// localStorage and combined into ACTIVE_WORDS (see "Vocabulary" section).
-// =====================================================================
 const RAW_WORDS = [
 ["Allay","to calm or pacify, set to rest; to lessen or relieve"],
 ["Equivocal","open to more than one interpretation; ambiguous; uncertain or misleading"],
@@ -139,13 +134,6 @@ const RAW_WORDS = [
 const MASTER_WORDS = RAW_WORDS.map((w,i)=>({id:i, term:w[0], def:w[1]}));
 const MASTER_IDS = new Set(MASTER_WORDS.map(w=>w.id));
 
-// =====================================================================
-// Local storage layer
-// Everything this app persists lives in the browser's own localStorage,
-// namespaced under "vocabApp.*". Nothing here is sent anywhere. Each key
-// is loaded and validated independently so that corruption in one piece
-// (e.g. hand-edited devtools data) can't take down the rest of the app.
-// =====================================================================
 const STORAGE_PREFIX = 'vocabApp.';
 const STORAGE_KEYS = {
   settings: STORAGE_PREFIX + 'settings.v1',
@@ -174,15 +162,14 @@ function readRaw(key){
 function writeRaw(key, value){
   if(!storageAvailable) return false;
   try{ window.localStorage.setItem(key, value); return true; }
-  catch(e){ return false; } // e.g. quota exceeded, or storage revoked mid-session
+  catch(e){ return false; }
 }
 function safeParse(raw){
   if(raw == null) return undefined;
   try{ return JSON.parse(raw); }
-  catch(e){ return undefined; } // corrupted JSON — caller falls back to defaults
+  catch(e){ return undefined; }
 }
 
-// ---- per-field validation helpers (corrupted/partial data degrades gracefully) ----
 function sanitizeProgressEntry(e){
   const d = {starred:false, level:0, attempts:0, correct:0, misses:0};
   if(!e || typeof e !== 'object') return d;
@@ -242,21 +229,14 @@ function sanitizeStats(raw){
   };
 }
 
-// =====================================================================
-// Application state
-// =====================================================================
 let settings = sanitizeSettings(undefined);
-// progress[id] holds durable, cross-session facts about a word (default or custom).
-// Anything specific to the current Learn round lives in learnRoundStats instead.
 let progress = {};
 let stats = { attempts:0, correct:0 };
-let customWords = [];      // [{id, term, def}] — user-added words, this browser only
-let removedIds = [];       // [id, ...] — default word ids this user has hidden
+let customWords = [];
+let removedIds = [];
 
-// The word set actually used everywhere in the app (flashcards, Learn, Match,
-// Browse, Stats). Recomputed whenever vocabulary changes.
 let ACTIVE_WORDS = [];
-let WORD_INDEX = {}; // id -> word object, for O(1) lookup regardless of id type
+let WORD_INDEX = {};
 
 function rebuildActiveWords(){
   const removedSet = new Set(removedIds);
@@ -295,25 +275,24 @@ let matchLocked = false;
 
 let currentMode = 'flash';
 
-// ================= Learn engine =================
-// Model: a fixed pool of words for this round. Each word has round-local stats
-// (streak, attempts this round, last result, retired flag) used to compute a
-// priority score. Small batches are pulled from the pool by priority, answered
-// one at a time, then a recap is shown before pulling the next batch — mirroring
-// "small batch -> evaluate -> update mastery estimate -> select next batch -> repeat".
-let learnPool = [];          // array of word ids in this round
-let learnRoundStats = {};    // id -> {streak, attemptsThisRound, lastResult, retired}
-let learnBatch = [];         // array of {id} for the current batch
-let learnBatchPos = 0;       // index within the current batch
+let learnPool = [];
+let learnRoundStats = {};
+let learnBatch = [];
+let learnBatchPos = 0;
 let learnBatchNumber = 0;
-let learnBatchResults = [];  // [{id, correct, dir, mode}] for the recap screen
-let learnPhase = 'question'; // 'question' | 'recap' | 'complete'
-let learnCurrent = null;     // the question currently being asked
+let learnBatchResults = [];
+let learnPhase = 'question';
+let learnCurrent = null;
 let learnAwaitingNext = false;
 
+let testConfig = { count:10, types:{ tf:true, mc:true, match:true } };
+let testWords = [];
+let testItems = [];
+let testAnswers = {};
+let testScore = null;
+let testPhase = 'setup';
+
 function requiredStreak(id){
-  // Words that have ever been missed historically need to be demonstrated
-  // more than once before we treat them as no longer at risk of being forgotten.
   const p = progress[id];
   return (p && p.misses > 0) ? 3 : 2;
 }
@@ -321,13 +300,13 @@ function priorityScore(id){
   const r = learnRoundStats[id];
   if(r.retired) return -Infinity;
   let score = 0;
-  if(r.attemptsThisRound === 0) score += 4;               // introduce unseen terms
-  if(r.lastResult === 'incorrect') score += 6;             // pull missed terms back soon
-  score += Math.max(0, requiredStreak(id) - r.streak) * 1.5; // distance from demonstrated mastery
+  if(r.attemptsThisRound === 0) score += 4;
+  if(r.lastResult === 'incorrect') score += 6;
+  score += Math.max(0, requiredStreak(id) - r.streak) * 1.5;
   const hist = progress[id] || {attempts:0, correct:0};
   const histAcc = hist.attempts > 0 ? hist.correct / hist.attempts : 1;
-  score += (1 - histAcc) * 3;                              // historically difficult terms surface more
-  score += Math.random() * 0.8;                            // light jitter so batches don't feel robotic
+  score += (1 - histAcc) * 3;
+  score += Math.random() * 0.8;
   return score;
 }
 function reasonTag(id){
@@ -340,7 +319,7 @@ function reasonTag(id){
 function questionModeFor(id){
   if(settings.input === 'mc') return 'mc';
   if(settings.input === 'type') return 'type';
-  return learnRoundStats[id].streak >= 1 ? 'type' : 'mc'; // adaptive: recognition first, then active recall
+  return learnRoundStats[id].streak >= 1 ? 'type' : 'mc';
 }
 function buildLearnRound(){
   learnPool = scopedWords().map(w => w.id);
@@ -509,6 +488,9 @@ function advanceLearn(){
     renderLearnQuestion();
   } else {
     learnPhase = 'recap';
+    if(learnBatchResults.length > 0 && learnBatchResults.every(r => r.correct)){
+      fireConfetti();
+    }
     renderLearnRecap();
   }
 }
@@ -589,7 +571,6 @@ function renderLearnComplete(){
   document.getElementById('restartAll').onclick = () => { buildLearnRound(); render(); };
 }
 
-// ---------- persistence ----------
 function loadAll(){
   storageAvailable = detectStorage();
   const banner = document.getElementById('storageBanner');
@@ -623,7 +604,6 @@ function saveAll(){
   }, 250);
 }
 
-// ---------- vocabulary management ----------
 function makeCustomId(){
   return 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
 }
@@ -645,12 +625,10 @@ function addCustomWord(term, def){
 function removeWord(id){
   if(typeof id === 'string' && id.startsWith('c_')){
     customWords = customWords.filter(w => w.id !== id);
-    delete progress[id]; // custom words have no restore path; drop their history too
+    delete progress[id];
   } else {
     const numId = Number(id);
     if(!removedIds.includes(numId)) removedIds.push(numId);
-    // progress for the hidden default word is intentionally preserved so that
-    // restoring it later does not reset prior study history.
   }
   rebuildActiveWords();
   saveAll();
@@ -668,11 +646,15 @@ function clearAllLocalData(){
   MASTER_WORDS.forEach(w => { progress[w.id] = sanitizeProgressEntry(undefined); });
   stats = {attempts:0, correct:0};
   settings = sanitizeSettings(undefined);
+  testWords = [];
+  testItems = [];
+  testAnswers = {};
+  testScore = null;
+  testPhase = 'setup';
   rebuildActiveWords();
   saveAll();
 }
 
-// ---------- audio ----------
 let actx;
 function beep(ok){
   if(!settings.sound) return;
@@ -687,10 +669,37 @@ function beep(ok){
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.25);
     o.stop(actx.currentTime + 0.27);
-  }catch(e){ /* audio unavailable */ }
+  }catch(e){}
 }
 
-// ---------- helpers ----------
+function fireConfetti(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#4255ff','#ffcd1f','#1fb27a','#ff5a63','#a259ff'];
+  const count = 60;
+  const frag = document.createDocumentFragment();
+  const pieces = [];
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const left = Math.random()*100;
+    const drift = Math.round(Math.random()*160-80) + 'px';
+    const spin = Math.round(Math.random()*720-360) + 'deg';
+    const duration = Math.round(2200 + Math.random()*1400);
+    const delay = Math.round(Math.random()*250);
+    el.style.left = left + 'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.setProperty('--drift', drift);
+    el.style.setProperty('--spin', spin);
+    el.style.animationDuration = duration + 'ms';
+    el.style.animationDelay = delay + 'ms';
+    if(Math.random()<0.5) el.style.borderRadius = '50%';
+    frag.appendChild(el);
+    pieces.push(el);
+  }
+  document.body.appendChild(frag);
+  setTimeout(() => { pieces.forEach(p => p.remove()); }, 4200);
+}
+
 function shuffleArr(a){
   const arr = a.slice();
   for(let i=arr.length-1;i>0;i--){
@@ -733,7 +742,6 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ---------- flashcards ----------
 function buildFlashDeck(){
   const list = scopedWords();
   flashDeck = orderList(list).map(w => ({...w, _dir: dirForCard()}));
@@ -769,9 +777,6 @@ function renderFlash(){
       </div>
     </div>
   `;
-  // Rebinding all handlers on every render (rather than relying on any stale
-  // references) is what keeps flipping reliable after the deck is rebuilt —
-  // e.g. after adding/removing words, or changing scope/order.
   const flip = ()=>{ flashFlipped=!flashFlipped; renderFlash(); if(settings.autoplay) scheduleAutoplay(); };
   const cardEl = document.getElementById('flashCard');
   cardEl.addEventListener('click', flip);
@@ -817,7 +822,6 @@ function scheduleAutoplay(){
   }, half);
 }
 
-// ---------- match ----------
 function buildMatch(){
   stopMatchTimer();
   const list = scopedWords();
@@ -856,7 +860,7 @@ function renderMatch(){
   matchTiles.forEach((t,i)=>{
     const btn = document.createElement('button');
     btn.className = 'tile ' + (t.type==='term'?'term':'def') + (t.matched?' matched':'') + (matchSelected.includes(i)?' selected':'');
-    btn.textContent = t.text; // textContent, not innerHTML — safe for custom (user-typed) words
+    btn.textContent = t.text;
     btn.disabled = t.matched;
     btn.onclick = ()=>handleTileClick(i);
     grid.appendChild(btn);
@@ -921,7 +925,6 @@ function handleTileClick(i){
   }
 }
 
-// ---------- browse ----------
 let browseQuery = '';
 function renderBrowse(){
   const app = document.getElementById('app');
@@ -977,7 +980,6 @@ function renderBrowseList(){
   });
 }
 
-// ---------- manage (add / remove / restore vocabulary) ----------
 function renderManage(){
   const app = document.getElementById('app');
   const removedWords = removedIds.map(id => MASTER_WORDS.find(w => w.id === id)).filter(Boolean);
@@ -1054,7 +1056,6 @@ function renderManage(){
   });
 }
 
-// ---------- stats ----------
 function renderStats(){
   const app = document.getElementById('app');
   const mastered = ACTIVE_WORDS.filter(w=>progress[w.id] && progress[w.id].level>=2).length;
@@ -1076,7 +1077,277 @@ function renderStats(){
   `;
 }
 
-// ---------- rendering / mode switch ----------
+function letterGrade(pct){
+  if(pct>=90) return 'A';
+  if(pct>=80) return 'B';
+  if(pct>=70) return 'C';
+  if(pct>=60) return 'D';
+  return 'F';
+}
+function chunkMatchWords(words){
+  const chunks = [];
+  let i = 0;
+  const n = words.length;
+  while(i < n){
+    let size = Math.min(4, n-i);
+    if(n-i-size === 1) size -= 1;
+    if(size < 2) size = n-i;
+    chunks.push(words.slice(i, i+size));
+    i += size;
+  }
+  return chunks;
+}
+function assignTestTypes(words, typesSelected){
+  const types = typesSelected.slice();
+  const assignments = words.map(() => types[Math.floor(Math.random()*types.length)]);
+  if(types.includes('match')){
+    const matchCount = assignments.filter(t => t==='match').length;
+    if(matchCount === 1){
+      const idx = assignments.indexOf('match');
+      const fallback = types.find(t => t!=='match');
+      assignments[idx] = fallback || 'match';
+    }
+  }
+  return assignments;
+}
+function makeTFItem(word, pool){
+  let isTrue = Math.random() < 0.5;
+  let shownDef;
+  if(isTrue){
+    shownDef = word.def;
+  } else {
+    const others = pool.filter(w => w.id !== word.id);
+    shownDef = others.length ? others[Math.floor(Math.random()*others.length)].def : word.def;
+    if(shownDef === word.def) isTrue = true;
+  }
+  return {type:'tf', word, shownDef, isTrue};
+}
+function makeMCItem(word, pool){
+  const dir = Math.random() < 0.5 ? 'td' : 'dt';
+  const distractorPool = pool.filter(w => w.id !== word.id);
+  const distractors = shuffleArr(distractorPool).slice(0, Math.min(3, distractorPool.length));
+  const correctText = dir==='td' ? word.def : word.term;
+  const opts = distractors.map(d => dir==='td' ? d.def : d.term);
+  opts.push(correctText);
+  const choices = shuffleArr(opts);
+  return {type:'mc', word, dir, choices, correctText};
+}
+function makeMatchItem(words){
+  const shuffledDefs = shuffleArr(words.map(w => w.def));
+  return {type:'match', words, shuffledDefs};
+}
+function buildTestItems(words, assignments, pool){
+  const items = [];
+  const matchWords = [];
+  words.forEach((w,i) => {
+    const t = assignments[i];
+    if(t==='match') matchWords.push(w);
+    else if(t==='tf') items.push(makeTFItem(w, pool));
+    else items.push(makeMCItem(w, pool));
+  });
+  if(matchWords.length === 1){
+    items.push(makeMCItem(matchWords[0], pool));
+  } else if(matchWords.length >= 2){
+    chunkMatchWords(matchWords).forEach(chunk => items.push(makeMatchItem(chunk)));
+  }
+  return shuffleArr(items);
+}
+function buildTest(){
+  const N = Math.min(testConfig.count, ACTIVE_WORDS.length);
+  const selectedTypes = Object.keys(testConfig.types).filter(k => testConfig.types[k]);
+  testWords = shuffleArr(ACTIVE_WORDS).slice(0, N);
+  const assignments = assignTestTypes(testWords, selectedTypes);
+  testItems = buildTestItems(testWords, assignments, ACTIVE_WORDS);
+  testAnswers = {};
+  testScore = null;
+  testPhase = 'active';
+}
+function rebuildSameTest(){
+  const selectedTypes = Object.keys(testConfig.types).filter(k => testConfig.types[k]);
+  const assignments = assignTestTypes(testWords, selectedTypes);
+  testItems = buildTestItems(testWords, assignments, ACTIVE_WORDS);
+  testAnswers = {};
+  testScore = null;
+  testPhase = 'active';
+}
+function isItemAnswered(item, idx){
+  if(item.type==='match'){
+    const ans = testAnswers[idx] || {};
+    return item.words.every(w => ans[w.id]);
+  }
+  return testAnswers[idx] !== undefined && testAnswers[idx] !== null && testAnswers[idx] !== '';
+}
+function countUnanswered(){
+  return testItems.reduce((acc,item,idx) => acc + (isItemAnswered(item,idx) ? 0 : 1), 0);
+}
+function submitTest(){
+  let earned = 0;
+  let total = 0;
+  testItems.forEach((item, idx) => {
+    if(item.type==='tf'){
+      total += 1;
+      const chosen = testAnswers[idx];
+      const correct = chosen !== undefined && chosen === String(item.isTrue);
+      item._correct = correct;
+      item._chosen = chosen;
+      if(correct) earned += 1;
+    } else if(item.type==='mc'){
+      total += 1;
+      const chosen = testAnswers[idx];
+      const correct = chosen === item.correctText;
+      item._correct = correct;
+      item._chosen = chosen;
+      if(correct) earned += 1;
+    } else {
+      const answers = testAnswers[idx] || {};
+      let chunkCorrect = 0;
+      item.words.forEach(w => {
+        total += 1;
+        if(answers[w.id] === w.def) chunkCorrect += 1;
+      });
+      item._chunkCorrect = chunkCorrect;
+      item._answers = answers;
+      earned += chunkCorrect;
+    }
+  });
+  testScore = {earned, total};
+  testPhase = 'graded';
+  if(total > 0 && earned === total) fireConfetti();
+  render();
+}
+function handleSubmitTestClick(){
+  const unanswered = countUnanswered();
+  if(unanswered > 0){
+    if(!confirm(`You have ${unanswered} unanswered question${unanswered===1?'':'s'}. Submit anyway?`)) return;
+  }
+  submitTest();
+}
+function choiceClass(graded, isCorrectOption, isChosenOption){
+  let cls = 'choice';
+  if(graded){
+    if(isCorrectOption) cls += ' correct';
+    else if(isChosenOption) cls += ' wrong';
+  } else if(isChosenOption){
+    cls += ' selected';
+  }
+  return cls;
+}
+function renderTF(item, idx, total, graded){
+  const chosen = graded ? item._chosen : testAnswers[idx];
+  const trueIsCorrect = item.isTrue === true;
+  const trueChosen = chosen === 'true';
+  const falseChosen = chosen === 'false';
+  const trueCls = choiceClass(graded, trueIsCorrect, trueChosen);
+  const falseCls = choiceClass(graded, !trueIsCorrect, falseChosen);
+  const disabled = graded ? 'disabled' : '';
+  return `
+    <div class="test-q" data-idx="${idx}">
+      <div class="tq-head"><span>QUESTION ${idx+1} OF ${total}</span><span>TRUE / FALSE</span></div>
+      <div class="tq-prompt">Is this definition correct for <b>${escapeHtml(item.word.term)}</b>?<br>"${escapeHtml(item.shownDef)}"</div>
+      <button class="${trueCls}" data-idx="${idx}" data-type="tf" data-val="true" ${disabled}>True</button>
+      <button class="${falseCls}" data-idx="${idx}" data-type="tf" data-val="false" ${disabled}>False</button>
+      ${graded && !item._correct ? `<div class="feedback bad">Correct answer: ${item.isTrue ? 'True' : 'False'}</div>` : ''}
+    </div>`;
+}
+function renderMC(item, idx, total, graded){
+  const chosen = graded ? item._chosen : testAnswers[idx];
+  const promptLabel = item.dir==='td' ? 'What is the definition of' : 'Which word means';
+  const promptText = item.dir==='td' ? item.word.term : item.word.def;
+  const btns = item.choices.map(c => {
+    const isCorrectOpt = c === item.correctText;
+    const isChosenOpt = c === chosen;
+    const cls = choiceClass(graded, isCorrectOpt, isChosenOpt);
+    return `<button class="${cls}" data-idx="${idx}" data-type="mc" data-text="${escapeHtml(c)}" ${graded?'disabled':''}>${escapeHtml(c)}</button>`;
+  }).join('');
+  return `
+    <div class="test-q" data-idx="${idx}">
+      <div class="tq-head"><span>QUESTION ${idx+1} OF ${total}</span><span>MULTIPLE CHOICE</span></div>
+      <div class="tq-prompt"><b>${escapeHtml(promptLabel)}</b> ${escapeHtml(promptText)}?</div>
+      ${btns}
+      ${graded && !item._correct ? `<div class="feedback bad">Correct answer: ${escapeHtml(item.correctText)}</div>` : ''}
+    </div>`;
+}
+function renderMatchQ(item, idx, total, graded){
+  const answers = graded ? (item._answers || {}) : (testAnswers[idx] || {});
+  const rows = item.words.map(w => {
+    const chosen = answers[w.id] || '';
+    const isCorrect = chosen === w.def;
+    const rowCls = graded ? (isCorrect ? 'match-row ok' : 'match-row bad') : 'match-row';
+    const opts = ['<option value="">Choose a definition…</option>']
+      .concat(item.shuffledDefs.map(d => `<option value="${escapeHtml(d)}" ${chosen===d?'selected':''}>${escapeHtml(d)}</option>`));
+    return `<div class="${rowCls}">
+      <div class="mr-term">${escapeHtml(w.term)}</div>
+      <select data-idx="${idx}" data-wordid="${w.id}" data-type="match" ${graded?'disabled':''}>${opts.join('')}</select>
+      ${graded && !isCorrect ? `<span class="mr-correct">Correct: ${escapeHtml(w.def)}</span>` : ''}
+    </div>`;
+  }).join('');
+  return `
+    <div class="test-q" data-idx="${idx}">
+      <div class="tq-head"><span>QUESTION ${idx+1} OF ${total}</span><span>MATCHING · ${item.words.length} PAIRS</span></div>
+      <div class="tq-prompt">Match each term to its definition.</div>
+      ${rows}
+    </div>`;
+}
+function renderTestItemHtml(item, idx, total, graded){
+  if(item.type==='tf') return renderTF(item, idx, total, graded);
+  if(item.type==='mc') return renderMC(item, idx, total, graded);
+  return renderMatchQ(item, idx, total, graded);
+}
+function wireTestInputs(){
+  document.querySelectorAll('.test-q').forEach(qEl => {
+    const idx = Number(qEl.dataset.idx);
+    qEl.querySelectorAll('button.choice[data-type="tf"], button.choice[data-type="mc"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        qEl.querySelectorAll('button.choice').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        if(btn.dataset.type==='tf') testAnswers[idx] = btn.dataset.val;
+        else testAnswers[idx] = btn.dataset.text;
+      });
+    });
+    qEl.querySelectorAll('select[data-type="match"]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        if(!testAnswers[idx]) testAnswers[idx] = {};
+        testAnswers[idx][sel.dataset.wordid] = sel.value;
+      });
+    });
+  });
+}
+function renderTestGraded(){
+  const app = document.getElementById('app');
+  const pct = testScore.total > 0 ? Math.round((testScore.earned/testScore.total)*100) : 0;
+  const grade = letterGrade(pct);
+  let html = `<div class="learn-card" style="max-width:min(760px,94vw); margin:0 auto;">
+      <div class="complete" style="padding: clamp(14px,3vw,20px) 0;">
+        <h2>Test complete</h2>
+        <div class="recap-score">${testScore.earned} / ${testScore.total} · ${pct}% · Grade ${grade}</div>
+      </div>`;
+  html += testItems.map((item,idx) => renderTestItemHtml(item, idx, testItems.length, true)).join('');
+  html += `<div class="row" style="margin-top:24px; gap:12px;">
+        <button class="iconbtn big" id="retakeTestBtn">Retake this test</button>
+        <button class="iconbtn big" id="newTestBtn">New test</button>
+      </div></div>`;
+  app.innerHTML = html;
+  document.getElementById('retakeTestBtn').onclick = () => { rebuildSameTest(); render(); };
+  document.getElementById('newTestBtn').onclick = () => { testPhase = 'setup'; render(); openTestSetup(); };
+}
+function renderTest(){
+  const app = document.getElementById('app');
+  if(testPhase === 'active'){
+    app.innerHTML = `<div class="learn-card" style="max-width:min(760px,94vw); margin:0 auto;">
+        <div class="learn-eyebrow"><span>TEST</span><span>${testItems.length} QUESTIONS</span></div>
+        ${testItems.map((item,idx) => renderTestItemHtml(item, idx, testItems.length, false)).join('')}
+        <div class="row" style="margin-top:24px;"><button class="iconbtn big" id="submitTestBtn">Submit Test</button></div>
+      </div>`;
+    wireTestInputs();
+    document.getElementById('submitTestBtn').onclick = handleSubmitTestClick;
+  } else if(testPhase === 'graded'){
+    renderTestGraded();
+  } else {
+    app.innerHTML = `<div class="empty-note">Configure a test to get started.<br><button class="iconbtn big" style="margin-top:14px;" id="openTestSetupBtn">Set up a test</button></div>`;
+    document.getElementById('openTestSetupBtn').onclick = openTestSetup;
+  }
+}
+
 function render(){
   if(currentMode==='flash') renderFlash();
   else if(currentMode==='learn') renderLearn();
@@ -1084,6 +1355,7 @@ function render(){
   else if(currentMode==='browse') renderBrowse();
   else if(currentMode==='manage') renderManage();
   else if(currentMode==='stats') renderStats();
+  else if(currentMode==='test') renderTest();
 }
 function switchMode(mode){
   if(mode===currentMode) return;
@@ -1096,9 +1368,9 @@ function switchMode(mode){
   else if(mode==='match') buildMatch();
   render();
   if(mode==='flash' && settings.autoplay) scheduleAutoplay();
+  if(mode==='test' && testPhase==='setup') openTestSetup();
 }
 
-// ---------- settings UI wiring ----------
 const SEG_BINDINGS = [
   ['segDirection','direction'], ['segScope','scope'], ['segOrder','order'],
   ['segBatch','batchSize'], ['segChoices','choices'], ['segInput','input'],
@@ -1197,7 +1469,7 @@ function initSettingsPanel(){
   document.getElementById('closeInfo').onclick = closeInfo;
   document.getElementById('infoOverlay').onclick = closeInfo;
 
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeCompliance(); closeInfo(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeCompliance(); closeInfo(); closeTestSetup(); } });
 
   document.getElementById('resetBtn').onclick = ()=>{
     if(!confirm('Clear all local data? This permanently deletes your custom words, restores removed default words, and wipes all progress, statistics, and settings on this device. This cannot be undone.')) return;
@@ -1208,6 +1480,95 @@ function initSettingsPanel(){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='flash'));
     rebuildCurrentMode();
   };
+}
+
+function openTestSetup(){
+  syncTestSetupUI();
+  document.getElementById('testSetupModal').classList.add('open');
+  document.getElementById('testSetupOverlay').classList.add('open');
+}
+function closeTestSetup(){
+  const modal = document.getElementById('testSetupModal');
+  const overlay = document.getElementById('testSetupOverlay');
+  if(modal) modal.classList.remove('open');
+  if(overlay) overlay.classList.remove('open');
+}
+function syncTestSetupUI(){
+  const max = Math.max(3, ACTIVE_WORDS.length);
+  if(testConfig.count > max) testConfig.count = max;
+  if(testConfig.count < 3) testConfig.count = Math.min(3, max);
+  [['testTypeTF','tf'],['testTypeMC','mc'],['testTypeMatch','match']].forEach(([id,key]) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('on', !!testConfig.types[key]);
+    el.setAttribute('aria-checked', String(!!testConfig.types[key]));
+  });
+  document.getElementById('testCountInput').value = testConfig.count;
+  document.getElementById('testCountInput').max = max;
+  document.getElementById('testCountMax').textContent = `max ${ACTIVE_WORDS.length} available`;
+  document.querySelectorAll('#testCountPresets button').forEach(b => {
+    const v = b.dataset.v==='all' ? max : Number(b.dataset.v);
+    b.classList.toggle('active', v === testConfig.count);
+    b.disabled = b.dataset.v!=='all' && Number(b.dataset.v) > ACTIVE_WORDS.length;
+  });
+  document.getElementById('testSetupMsg').textContent = '';
+}
+function wireTestTypeSwitch(id, key){
+  const el = document.getElementById(id);
+  el.setAttribute('role','switch');
+  el.tabIndex = 0;
+  const flip = ()=>{
+    const activeCount = Object.values(testConfig.types).filter(Boolean).length;
+    if(testConfig.types[key] && activeCount<=1){
+      document.getElementById('testSetupMsg').textContent = 'At least one question type must be selected.';
+      return;
+    }
+    testConfig.types[key] = !testConfig.types[key];
+    syncTestSetupUI();
+  };
+  el.onclick = flip;
+  el.onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flip(); } };
+}
+function initTestSetupPanel(){
+  wireTestTypeSwitch('testTypeTF','tf');
+  wireTestTypeSwitch('testTypeMC','mc');
+  wireTestTypeSwitch('testTypeMatch','match');
+
+  document.querySelectorAll('#testCountPresets button').forEach(b => {
+    b.onclick = ()=>{
+      const max = Math.max(3, ACTIVE_WORDS.length);
+      const v = b.dataset.v==='all' ? max : Number(b.dataset.v);
+      testConfig.count = Math.max(3, Math.min(v, max));
+      syncTestSetupUI();
+    };
+  });
+  const countInput = document.getElementById('testCountInput');
+  countInput.addEventListener('change', ()=>{
+    const max = Math.max(3, ACTIVE_WORDS.length);
+    let val = Number(countInput.value);
+    if(!Number.isFinite(val) || val<3) val = 3;
+    if(val>max) val = max;
+    testConfig.count = val;
+    syncTestSetupUI();
+  });
+
+  document.getElementById('startTestBtn').onclick = ()=>{
+    const msg = document.getElementById('testSetupMsg');
+    if(ACTIVE_WORDS.length < 3){
+      msg.textContent = 'You need at least 3 words in your vocabulary to take a test.';
+      return;
+    }
+    const selectedTypes = Object.keys(testConfig.types).filter(k => testConfig.types[k]);
+    if(selectedTypes.length===0){
+      msg.textContent = 'Select at least one question type.';
+      return;
+    }
+    buildTest();
+    closeTestSetup();
+    render();
+  };
+  document.getElementById('cancelTestSetupBtn').onclick = ()=>{ closeTestSetup(); render(); };
+  document.getElementById('closeTestSetup').onclick = ()=>{ closeTestSetup(); render(); };
+  document.getElementById('testSetupOverlay').onclick = ()=>{ closeTestSetup(); render(); };
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -1228,6 +1589,7 @@ document.addEventListener('keydown', e=>{
   loadAll();
   applyTheme();
   initSettingsPanel();
+  initTestSetupPanel();
   buildFlashDeck();
   render();
   if(settings.autoplay) scheduleAutoplay();
