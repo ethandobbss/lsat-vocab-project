@@ -28,6 +28,7 @@
     <button class="tab-btn active" data-mode="flash">Flashcards</button>
     <button class="tab-btn" data-mode="learn">Learn</button>
     <button class="tab-btn" data-mode="match">Match</button>
+    <button class="tab-btn" data-mode="test">Test</button>
     <button class="tab-btn" data-mode="browse">Browse</button>
     <button class="tab-btn" data-mode="manage">Manage</button>
     <button class="tab-btn" data-mode="stats">Stats</button>
@@ -46,7 +47,6 @@
   </footer>
 </div>
 
-<!-- Settings drawer -->
 <div class="overlay" id="overlay"></div>
 <div class="drawer" id="drawer">
   <button class="close-drawer" id="closeDrawer" aria-label="Close">×</button>
@@ -146,7 +146,6 @@
   <button class="reset-btn" id="resetBtn">Clear all local data (vocabulary, progress, stats, settings)</button>
 </div>
 
-<!-- Compliance modal -->
 <div class="overlay" id="complianceOverlay"></div>
 <div class="modal" id="complianceModal" role="dialog" aria-modal="true" aria-labelledby="complianceTitle">
   <button class="close-drawer" id="closeCompliance" aria-label="Close">×</button>
@@ -162,7 +161,7 @@
       <li>Statistics derived from the above</li>
       <li>Interface preferences (theme, text size, study direction, scope, batch size, and so on)</li>
     </ul>
-    <p>No name, email, device identifier, or other personal information is collected. The default word list is fixed content built into the app, not data about you.</p>
+    <p>No name, email, device identifier, or other personal information is collected. The default word list is fixed content built into the app, not data about you. Test mode setup and results are kept only in memory for the current session and are not written to storage.</p>
 
     <h4>What is not collected</h4>
     <p>This tool has no analytics, tracking, advertising, or telemetry, and makes no network requests of any kind once the page is loaded — everything runs entirely in your browser. There is no consent popup for storage because everything stored is strictly necessary for the features you're actively using (saving your own vocabulary and progress), not optional tracking — there is nothing non-essential to ask consent for.</p>
@@ -177,7 +176,6 @@
   </div>
 </div>
 
-<!-- Info modal -->
 <div class="overlay" id="infoOverlay"></div>
 <div class="modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
   <button class="close-drawer" id="closeInfo" aria-label="Close">×</button>
@@ -190,6 +188,7 @@
       <li><strong>Flashcards</strong> — flip through terms and definitions at your own pace.</li>
       <li><strong>Learn</strong> — an adaptive quiz that studies small batches at a time, prioritizing whatever you're most likely to forget, and shifting from multiple choice to typed recall as you demonstrate mastery.</li>
       <li><strong>Match</strong> — a timed pairs game.</li>
+      <li><strong>Test</strong> — configure a length and a mix of true/false, multiple choice, and matching questions, then take a graded test.</li>
       <li><strong>Browse</strong> — search the full list, star favorites, or remove words.</li>
       <li><strong>Manage</strong> — add your own words, or restore ones you've removed.</li>
       <li><strong>Stats</strong> — a summary of what you've mastered so far.</li>
@@ -204,6 +203,50 @@
     </ul>
 
     <p class="modal-fineprint">See the Compliance notice for details on what data this tool stores and how.</p>
+  </div>
+</div>
+
+<div class="overlay" id="testSetupOverlay"></div>
+<div class="modal" id="testSetupModal" role="dialog" aria-modal="true" aria-labelledby="testSetupTitle">
+  <button class="close-drawer" id="closeTestSetup" aria-label="Close">×</button>
+  <h3 id="testSetupTitle">Set up a test</h3>
+  <div class="modal-body">
+    <div class="field">
+      <label>Number of questions</label>
+      <div class="seg" id="testCountPresets">
+        <button data-v="5">5</button>
+        <button data-v="10">10</button>
+        <button data-v="15">15</button>
+        <button data-v="20">20</button>
+        <button data-v="all">All</button>
+      </div>
+      <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <input type="number" id="testCountInput" min="3" style="width:90px;" />
+        <span id="testCountMax" style="font-family:var(--font-mono); font-size:.72rem; color:var(--ink-soft);"></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Question types</label>
+      <div class="field toggle-row" style="margin-bottom:12px;">
+        <label style="margin:0;">True / False</label>
+        <div class="switch" id="testTypeTF"></div>
+      </div>
+      <div class="field toggle-row" style="margin-bottom:12px;">
+        <label style="margin:0;">Multiple choice</label>
+        <div class="switch" id="testTypeMC"></div>
+      </div>
+      <div class="field toggle-row" style="margin-bottom:0;">
+        <label style="margin:0;">Matching</label>
+        <div class="switch" id="testTypeMatch"></div>
+      </div>
+    </div>
+
+    <div class="form-msg err" id="testSetupMsg"></div>
+    <div class="row" style="justify-content:flex-start; margin-top:10px;">
+      <button class="iconbtn big" id="startTestBtn">Start test</button>
+      <button class="footer-btn" id="cancelTestSetupBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
