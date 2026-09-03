@@ -34,6 +34,7 @@ The vocabulary list was pulled from [this Quizlet set](https://quizlet.com/72093
 - A settings panel for customizability
 - GDPR compliance
 
+If you experience any bugs (I have yet to encounter any), try opening the website in another browser.
 
 ## License
 
